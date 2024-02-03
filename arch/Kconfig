@@ -126,7 +126,6 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
-	imply ATOMIC_OPERATIONS_ARCH
 	help
 	  Xtensa architecture
 
@@ -140,7 +139,7 @@ config ARCH_POSIX
 	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
 	select BARRIER_OPERATIONS_BUILTIN
-	# native_posix gets its memory cleared on entry by the host OS
+	# POSIX arch based targets get their memory cleared on entry by the host OS
 	select SKIP_BSS_CLEAR
 	help
 	  POSIX (native) architecture
@@ -392,6 +391,29 @@ config NOCACHE_MEMORY
 
 menu "Interrupt Configuration"
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	bool
+	default y
+	# Userspace is currently not supported
+	depends on !USERSPACE
+	# List of currently supported architectures
+	depends on ARM || ARM64
+	# List of currently supported toolchains
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+
+config ISR_TABLES_LOCAL_DECLARATION
+	bool "ISR tables created locally and placed by linker [EXPERIMENTAL]"
+	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  Enable new scheme of interrupt tables generation.
+	  This is totally different generator that would create tables entries locally
+	  where the IRQ_CONNECT macro is called and then use the linker script to position it
+	  in the right place in memory.
+	  The most important advantage of such approach is that the generated interrupt tables
+	  are LTO compatible.
+	  The drawback is that the support on the architecture port is required.
+
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
 	help
@@ -513,6 +535,16 @@ config IRQ_OFFLOAD_NESTED
 	  legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK || LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
 
 config EXTRA_EXCEPTION_INFO
 	bool "Collect extra exception info"

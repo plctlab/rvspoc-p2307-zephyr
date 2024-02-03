@@ -73,6 +73,17 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 			ret = -errno;
 			LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
 		}
+
+		/* Allow DTLS handshake to timeout much faster.
+		 * these tests run on TUN/TAP network, so there should be no network latency.
+		 */
+		uint32_t min = 100;
+		uint32_t max = 500;
+
+		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MIN, &min,
+				 sizeof(min));
+		zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_HANDSHAKE_TIMEOUT_MAX, &max,
+				 sizeof(max));
 	}
 	return lwm2m_set_default_sockopt(ctx);
 }
@@ -212,10 +223,6 @@ static void observe_cb(enum lwm2m_observe_event event,
 int main(void)
 {
 	int ret;
-
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
-	srandom(time(NULL));
-#endif
 
 	ret = lwm2m_setup();
 	if (ret < 0) {

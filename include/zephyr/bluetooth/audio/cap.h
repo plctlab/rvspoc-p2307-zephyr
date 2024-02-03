@@ -131,7 +131,10 @@ struct bt_cap_initiator_cb {
  *
  * @param conn Connection to a remote server.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
  */
 int bt_cap_initiator_unicast_discover(struct bt_conn *conn);
 
@@ -250,7 +253,7 @@ struct bt_cap_unicast_audio_update_param {
 };
 
 /**
- * @brief Register Common Audio Profile callbacks
+ * @brief Register Common Audio Profile Initiator callbacks
  *
  * @param cb   The callback structure. Shall remain static.
  *
@@ -314,7 +317,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
  * This will stop the current procedure from continuing and making it possible to run a new
  * Common Audio Profile procedure.
  *
- * It is recommended to do this if any existing procedure take longer time than expected, which
+ * It is recommended to do this if any existing procedure takes longer time than expected, which
  * could indicate a missing response from the Common Audio Profile Acceptor.
  *
  * This does not send any requests to any Common Audio Profile Acceptors involved with the current
@@ -636,6 +639,73 @@ struct bt_cap_broadcast_to_unicast_param {
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
 					  struct bt_bap_unicast_group **unicast_group);
 
+/** Callback structure for CAP procedures */
+struct bt_cap_commander_cb {
+	/**
+	 * @brief Callback for bt_cap_initiator_unicast_discover().
+	 *
+	 * @param conn      The connection pointer supplied to
+	 *                  bt_cap_initiator_unicast_discover().
+	 * @param err       0 if Common Audio Service was found else -ENODATA.
+	 * @param csis_inst The Coordinated Set Identification Service if
+	 *                  Common Audio Service was found and includes a
+	 *                  Coordinated Set Identification Service.
+	 *                  NULL on error or if remote device does not include
+	 *                  Coordinated Set Identification Service.
+	 */
+	void (*discovery_complete)(struct bt_conn *conn, int err,
+				   const struct bt_csip_set_coordinator_csis_inst *csis_inst);
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+	/**
+	 * @brief Callback for bt_cap_commander_change_volume().
+	 *
+	 * @param conn           Pointer to the connection where the error
+	 *                       occurred. NULL if @p err is 0 or if cancelled by
+	 *                       bt_cap_commander_cancel()
+	 * @param err            0 on success, BT_GATT_ERR() with a
+	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *                       by bt_cap_commander_cancel().
+	 */
+	void (*volume_changed)(struct bt_conn *conn, int err);
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+	/**
+	 * @brief Callback for bt_cap_commander_change_volume_offset().
+	 *
+	 * @param conn           Pointer to the connection where the error
+	 *                       occurred. NULL if @p err is 0 or if cancelled by
+	 *                       bt_cap_initiator_unicast_audio_cancel()
+	 * @param err            0 on success, BT_GATT_ERR() with a
+	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *                       by bt_cap_initiator_unicast_audio_cancel().
+	 */
+	void (*volume_offset_changed)(struct bt_conn *conn, int err);
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
+};
+
+/**
+ * @brief Register Common Audio Profile Commander callbacks
+ *
+ * @param cb   The callback structure. Shall remain static.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY Callbacks are already registered
+ */
+int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb);
+
+/**
+ * @brief Unregister Common Audio Profile Commander callbacks
+ *
+ * @param cb   The callback structure that was previously registered.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
+
 /**
  * @brief Discovers audio support on a remote device.
  *
@@ -644,13 +714,41 @@ int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unica
  *
  * @note @kconfig{CONFIG_BT_CAP_COMMANDER} must be enabled for this function. If
  * @kconfig{CONFIG_BT_CAP_INITIATOR} is also enabled, it does not matter if
- * bt_cap_commander_unicast_discover() or bt_cap_initiator_unicast_discover() is used.
+ * bt_cap_commander_discover() or bt_cap_initiator_unicast_discover() is used.
  *
  * @param conn Connection to a remote server.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -EBUSY Already doing discovery for @p conn
  */
-int bt_cap_commander_unicast_discover(struct bt_conn *conn);
+int bt_cap_commander_discover(struct bt_conn *conn);
+
+/** @brief Cancel any current Common Audio Profile commander procedure
+ *
+ * This will stop the current procedure from continuing and making it possible to run a new
+ * Common Audio Profile procedure.
+ *
+ * It is recommended to do this if any existing procedure takes longer time than expected, which
+ * could indicate a missing response from the Common Audio Profile Acceptor.
+ *
+ * This does not send any requests to any Common Audio Profile Acceptors involved with the current
+ * procedure, and thus notifications from the Common Audio Profile Acceptors may arrive after this
+ * has been called. It is thus recommended to either only use this if a procedure has stalled, or
+ * wait a short while before starting any new Common Audio Profile procedure after this has been
+ * called to avoid getting notifications from the cancelled procedure. The wait time depends on
+ * the connection interval, the number of devices in the previous procedure and the behavior of the
+ * Common Audio Profile Acceptors.
+ *
+ * The respective callbacks of the procedure will be called as part of this with the connection
+ * pointer set to NULL and the err value set to -ECANCELED.
+ *
+ * @retval 0 on success
+ * @retval -EALREADY if no procedure is active
+ */
+int bt_cap_commander_cancel(void);
 
 struct bt_cap_commander_broadcast_reception_start_member_param {
 	/** Coordinated or ad-hoc set member. */

@@ -28,15 +28,15 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0_31 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "LED 0";
 		};
 		led1: led_1 {
-			gpios = <&gpio64_95 26 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio64_95 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio96_127 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio96_127 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "LED 2";
 		};
 	};
@@ -44,11 +44,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0_31 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
 		};
 		button1: button_1 {
-			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0_31 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
 		};
 	};
@@ -69,7 +69,7 @@
 	status = "okay";
 };
 
-&iom0 {
+&iom0_i2c {
 	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
@@ -77,7 +77,7 @@
 	status = "okay";
 };
 
-&iom1 {
+&iom1_spi {
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
@@ -87,6 +87,18 @@
 
 &mspi0 {
 	pinctrl-0 = <&mspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mspi2 {
+	pinctrl-0 = <&mspi2_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
