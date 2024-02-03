@@ -1,0 +1,8 @@
+identifier: milkv_duo_cv1800b
+name: Milk-V Duo CV1800B
+type: mcu
+arch: riscv64
+toolchain:
+  - zephyr
+supported:
+  - uart

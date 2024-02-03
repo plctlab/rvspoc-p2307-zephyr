@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Sophgo CV1800B SoC"
+	depends on SOC_SERIES_SOPHGO_CV1800B
+
+config SOC_SOPHGO_CV1800B
+	bool "Sophgo CV1800B"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice

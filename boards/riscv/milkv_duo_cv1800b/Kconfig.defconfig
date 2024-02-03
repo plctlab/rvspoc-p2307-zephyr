@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MILKV_DUO_CV1800B
+
+config BOARD
+	default "milkv_duo_cv1800b"
+
+endif

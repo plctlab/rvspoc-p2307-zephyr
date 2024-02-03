@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SOPHGO
+	bool
+
+if SOC_FAMILY_SOPHGO
+
+config SOC_FAMILY
+	string
+	default "sophgo"
+
+source "soc/riscv/sophgo/*/Kconfig.soc"
+
+endif # SOC_FAMILY_SOPHGO

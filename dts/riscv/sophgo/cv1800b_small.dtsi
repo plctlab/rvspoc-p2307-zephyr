@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2024 Junhui Liu <liujh2818@outlook.com>
+ */
+
+/ {
+	compatible = "sophgo,cv1800b";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <25000000>;
+
+		cpu0: cpu@0 {
+			compatible = "thead,c906", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv64imafdc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr";
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&plic>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		dma-noncoherent;
+		ranges;
+
+		uart0: uart@4140000 {
+			interrupts = < 30 1 >;
+			interrupt-parent = < &plic >;
+			clock-frequency = < 25000000 >;
+			reg = < 0x04140000 0x100 >;
+			compatible = "ns16550";
+			reg-shift = < 2 >;
+			status = "disabled";
+		};
+
+		uart1: uart@4150000 {
+			interrupts = < 31 1 >;
+			interrupt-parent = < &plic >;
+			clock-frequency = < 25000000 >;
+			reg = < 0x04150000 0x100 >;
+			compatible = "ns16550";
+			reg-shift = < 2 >;
+			status = "disabled";
+		};
+
+		plic: interrupt-controller@70000000 {
+			riscv,max-priority = <7>;
+			riscv,ndev = < 61 >;
+			reg = <0x70000000 0x04000000>;
+			interrupts-extended = <&cpu0_intc 0x0b &cpu0_intc 0x09>;
+			interrupt-controller;
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = < 0x00 >;
+			#interrupt-cells = < 0x02 >;
+		};
+
+		clint@74000000 {
+			compatible = "sifive,clint0";
+			reg = <0x74000000 0x10000>;
+			interrupts-extended = <&cpu0_intc 0x03 &cpu0_intc 0x07>;
+		};
+	};
+};

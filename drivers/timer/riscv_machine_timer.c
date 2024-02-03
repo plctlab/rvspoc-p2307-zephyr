@@ -95,9 +95,7 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
-	*(volatile uint64_t *)get_hart_mtimecmp() = time;
-#else
+#if !defined(CONFIG_64BIT) || defined(CONFIG_SET_MTIMECMP_32BIT)
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
@@ -109,6 +107,8 @@ static void set_mtimecmp(uint64_t time)
 	r[1] = 0xffffffff;
 	r[0] = (uint32_t)time;
 	r[1] = (uint32_t)(time >> 32);
+#else
+	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #endif
 }
 
@@ -122,7 +122,9 @@ static void set_divider(void)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(CONFIG_RISCV_RDTIME_FROM_CSR)
+	return csr_read(time);
+#elif defined(CONFIG_64BIT)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;

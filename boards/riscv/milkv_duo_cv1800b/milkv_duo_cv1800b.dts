@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "sophgo/cv1800b_small.dtsi"
+
+/ {
+	model = "Milk-V Duo";
+	compatible = "milkv,duo", "sophgo,cv1800b";
+
+	ram0:memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x3f40000>;
+	};
+
+	ram1: memory@83f40000 {
+		device_type = "memory";
+		reg = <0x83f40000 0xc0000>;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &ram1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
