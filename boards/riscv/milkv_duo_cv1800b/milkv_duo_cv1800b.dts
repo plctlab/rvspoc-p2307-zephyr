@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include "sophgo/cv1800b_small.dtsi"
+#include "zephyr/dt-bindings/gpio/gpio.h"
 
 / {
 	model = "Milk-V Duo";
@@ -27,9 +28,24 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &ram1;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led0: led_0 {
+			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led0;
+	};
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&gpio2 {
+	status = "okay";
 };

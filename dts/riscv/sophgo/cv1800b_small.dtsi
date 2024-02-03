@@ -57,6 +57,68 @@
 			status = "disabled";
 		};
 
+		gpio0: gpio@3020000 {						/* porta */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-gpio";
+			reg = <0x03020000 0x1000>;
+			ngpios = <32>;
+			interrupts = < 41 1 >;
+			interrupt-parent = < &plic >;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@3021000 {						/* portb */
+			compatible = "snps,designware-gpio";
+			reg = <0x03021000 0x1000>;
+			ngpios = <32>;
+			interrupts = < 42 1 >;
+			interrupt-parent = < &plic >;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@3022000 {						/* portc */
+			compatible = "snps,designware-gpio";
+			reg = <0x03022000 0x1000>;
+			ngpios = <32>;
+			interrupts = < 43 1 >;
+			interrupt-parent = < &plic >;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@3023000 {						/* portd */
+			compatible = "snps,designware-gpio";
+			reg = <0x03023000 0x1000>;
+			ngpios = <32>;
+			interrupts = < 44 1 >;
+			interrupt-parent = < &plic >;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@5021000 {						/* porte */
+			compatible = "snps,designware-gpio";
+			reg = <0x05021000 0x1000>;
+			ngpios = <32>;
+			interrupts = < 48 1 >;
+			interrupt-parent = < &plic >;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
 		plic: interrupt-controller@70000000 {
 			riscv,max-priority = <7>;
 			riscv,ndev = < 61 >;

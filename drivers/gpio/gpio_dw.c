@@ -436,11 +436,19 @@ static int gpio_dw_initialize(const struct device *port)
 #define INST_IRQ_FLAGS(n) \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags), (DT_INST_IRQ(n, flags)), (0))
 
-#define GPIO_CFG_IRQ(idx, n)									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),					\
-			    DT_INST_IRQ(n, priority), gpio_dw_isr,				\
-			    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));					\
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	#define GPIO_CFG_IRQ(idx, n)									\
+			IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, idx),					\
+				    DT_INST_IRQ(n, priority), gpio_dw_isr,				\
+				    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
+			irq_enable(DT_INST_IRQN_BY_IDX(n, idx));
+#else
+	#define GPIO_CFG_IRQ(idx, n)									\
+			IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),					\
+				    DT_INST_IRQ(n, priority), gpio_dw_isr,				\
+				    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
+			irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));
+#endif
 
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\
