@@ -3,6 +3,8 @@
  * Copyright (C) 2024 Junhui Liu <liujh2818@outlook.com>
  */
 
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
 / {
 	compatible = "sophgo,cv1800b";
 	#address-cells = <1>;
@@ -31,7 +33,7 @@
 
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&plic>;
+		interrupt-parent = <&plic0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		dma-noncoherent;
@@ -39,7 +41,7 @@
 
 		uart0: uart@4140000 {
 			interrupts = < 30 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 			clock-frequency = < 25000000 >;
 			reg = < 0x04140000 0x100 >;
 			compatible = "ns16550";
@@ -49,7 +51,7 @@
 
 		uart1: uart@4150000 {
 			interrupts = < 31 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 			clock-frequency = < 25000000 >;
 			reg = < 0x04150000 0x100 >;
 			compatible = "ns16550";
@@ -64,7 +66,7 @@
 			reg = <0x03020000 0x1000>;
 			ngpios = <32>;
 			interrupts = < 41 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -76,7 +78,7 @@
 			reg = <0x03021000 0x1000>;
 			ngpios = <32>;
 			interrupts = < 42 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -88,7 +90,7 @@
 			reg = <0x03022000 0x1000>;
 			ngpios = <32>;
 			interrupts = < 43 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -100,7 +102,7 @@
 			reg = <0x03023000 0x1000>;
 			ngpios = <32>;
 			interrupts = < 44 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -112,14 +114,74 @@
 			reg = <0x05021000 0x1000>;
 			ngpios = <32>;
 			interrupts = < 48 1 >;
-			interrupt-parent = < &plic >;
+			interrupt-parent = < &plic0 >;
 
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
 
-		plic: interrupt-controller@70000000 {
+		i2c0: i2c@4000000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04000000 0x1000>;
+			interrupts = <32 1>;
+			interrupt-parent = <&plic0>;
+
+			status = "okay";
+		};
+	
+		i2c1: i2c@4010000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04010000 0x1000>;
+			interrupts = <33 1>;
+			interrupt-parent = <&plic0>;
+
+			status = "okay";
+		};
+
+		i2c2: i2c@4020000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04020000 0x1000>;
+			interrupts = <34 1>;
+			interrupt-parent = <&plic0>;
+
+			status = "okay";
+		};
+
+		i2c3: i2c@4030000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04030000 0x1000>;
+			interrupts = <35 1>;
+			interrupt-parent = <&plic0>;
+
+			status = "okay";
+		};
+
+		i2c4: i2c@4040000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04040000 0x1000>;
+			interrupts = <36 1>;
+			interrupt-parent = <&plic0>;
+
+			status = "okay";
+		};
+
+		plic0: interrupt-controller@70000000 {
 			riscv,max-priority = <7>;
 			riscv,ndev = < 61 >;
 			reg = <0x70000000 0x04000000>;
