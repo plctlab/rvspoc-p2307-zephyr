@@ -32,8 +32,36 @@
 /** Row entry data type */
 #if CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW
 typedef uint16_t kbd_row_t;
+#define PRIkbdrow "%04x"
 #else
 typedef uint8_t kbd_row_t;
+#define PRIkbdrow "%02x"
+#endif
+
+#if defined(CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC) || defined(__DOXYGEN__)
+#define INPUT_KBD_ACTUAL_KEY_MASK_CONST
+/**
+ * @brief Enables or disables a specific row, column combination in the actual
+ * key mask.
+ *
+ * This allows enabling or disabling spcific row, column combination in the
+ * actual key mask in runtime. It can be useful if some of the keys are not
+ * present in some configuration, and the specific configuration is determined
+ * in runtime. Requires @kconfig{CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC} to
+ * be enabled.
+ *
+ * @param dev Pointer to the keyboard matrix device.
+ * @param row The matrix row to enable or disable.
+ * @param col The matrix column to enable or disable.
+ * @param enabled Whether the specificied row, col has to be enabled or disabled.
+ *
+ * @retval 0 If the change is successful.
+ * @retval -errno Negative errno if row or col are out of range for the device.
+ */
+int input_kbd_matrix_actual_key_mask_set(const struct device *dev,
+					  uint8_t row, uint8_t col, bool enabled);
+#else
+#define INPUT_KBD_ACTUAL_KEY_MASK_CONST const
 #endif
 
 /** Maximum number of rows */
@@ -88,6 +116,7 @@ struct input_kbd_matrix_common_config {
 	uint32_t debounce_up_us;
 	uint32_t settle_time_us;
 	bool ghostkey_check;
+	INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t *actual_key_mask;
 
 	/* extra data pointers */
 	kbd_row_t *matrix_stable_state;
@@ -108,6 +137,13 @@ struct input_kbd_matrix_common_config {
 #define INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL(node_id, _row_size, _col_size) \
 	BUILD_ASSERT(IN_RANGE(_row_size, 1, INPUT_KBD_MATRIX_ROW_BITS), "invalid row-size"); \
 	BUILD_ASSERT(IN_RANGE(_col_size, 1, UINT8_MAX), "invalid col-size"); \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
+	BUILD_ASSERT(DT_PROP_LEN(node_id, actual_key_mask) == _col_size, \
+		     "actual-key-mask size does not match the number of columns"); \
+	static INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t \
+		INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask)[_col_size] = \
+			DT_PROP(node_id, actual_key_mask); \
+	)) \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state)[_col_size]; \
@@ -159,6 +195,9 @@ struct input_kbd_matrix_common_config {
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \
 		.settle_time_us = DT_PROP(node_id, settle_time_us), \
 		.ghostkey_check = !DT_PROP(node_id, no_ghostkey_check), \
+		IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
+		.actual_key_mask = INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask), \
+		)) \
 		\
 		.matrix_stable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state), \
 		.matrix_unstable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state), \
@@ -238,12 +277,13 @@ struct input_kbd_matrix_common_data {
  */
 void input_kbd_matrix_poll_start(const struct device *dev);
 
-#ifdef CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK
+#if defined(CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK) || defined(__DOXYGEN__)
 /**
  * @brief Drive column hook
  *
  * This can be implemented by the application to handle column selection
- * quirks. Called after the driver specific drive_column function.
+ * quirks. Called after the driver specific drive_column function. Requires
+ * @kconfig{CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK} to be enabled.
  *
  * @param dev Keyboard matrix device instance.
  * @param col The column to drive, or

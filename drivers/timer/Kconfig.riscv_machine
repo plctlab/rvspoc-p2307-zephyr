@@ -39,3 +39,11 @@ config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
 	  dt_node_int_prop_int from Kconfig. (Tune in the conf file is not preferable.)
 
 endif
+
+config RISCV_RDTIME_FROM_CSR
+	bool "RISCV read time from mtime csr"
+	default n
+
+config SET_MTIMECMP_32BIT
+	bool "Set mtimecmp with 32bit operate"
+	default n

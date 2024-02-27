@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 import logging
 import threading
 import time
+import shutil
 
 from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
@@ -55,8 +56,8 @@ class Harness:
         self.capture_coverage = False
         self.next_pattern = 0
         self.record = None
+        self.record_pattern = None
         self.recording = []
-        self.fieldnames = []
         self.ztest = False
         self.detected_suite_names = []
         self.run_id = None
@@ -80,6 +81,18 @@ class Harness:
             self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
+            if self.record:
+                self.record_pattern = re.compile(self.record.get("regex", ""))
+
+    def build(self):
+        pass
+
+    def get_testcase_name(self):
+        """
+        Get current TestCase name.
+        """
+        return self.id
+
 
     def process_test(self, line):
 
@@ -172,7 +185,7 @@ class Console(Harness):
         '''
         if self.instance and len(self.instance.testcases) == 1:
             return self.instance.testcases[0].name
-        return self.id
+        return super(Console, self).get_testcase_name()
 
     def configure(self, instance):
         super(Console, self).configure(instance)
@@ -240,19 +253,10 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-
-        if self.record:
-            pattern = re.compile(self.record.get("regex", ""))
-            match = pattern.search(line)
+        if self.record_pattern:
+            match = self.record_pattern.search(line)
             if match:
-                csv = []
-                if not self.fieldnames:
-                    for k,v in match.groupdict().items():
-                        self.fieldnames.append(k)
-
-                for k,v in match.groupdict().items():
-                    csv.append(v.strip())
-                self.recording.append(csv)
+                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
 
         self.process_test(line)
         # Reset the resulting test state to 'failed' when not all of the patterns were
@@ -620,6 +624,12 @@ class Test(Harness):
             self._match = True
 
         result_match = result_re.match(line)
+        # some testcases are skipped based on predicates and do not show up
+        # during test execution, however they are listed in the summary. Parse
+        # the summary for status and use that status instead.
+
+        summary_re = re.compile(r"- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds")
+        summary_match = summary_re.match(line)
 
         if result_match:
             matched_status = result_match.group(1)
@@ -629,6 +639,20 @@ class Test(Harness):
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
             tc.duration = float(result_match.group(4))
+            if tc.status == "failed":
+                tc.output = self.testcase_output
+            self.testcase_output = ""
+            self._match = False
+            self.ztest = True
+        elif summary_match:
+            matched_status = summary_match.group(1)
+            self.detected_suite_names.append(summary_match.group(2))
+            name = "{}.{}".format(self.id, summary_match.group(4))
+            tc = self.instance.get_case_or_create(name)
+            tc.status = self.ztest_to_status[matched_status]
+            if tc.status == "skipped":
+                tc.reason = "ztest skip"
+            tc.duration = float(summary_match.group(5))
             if tc.status == "failed":
                 tc.output = self.testcase_output
             self.testcase_output = ""
@@ -650,13 +674,51 @@ class Ztest(Test):
     pass
 
 
+class Bsim(Harness):
+
+    def build(self):
+        """
+        Copying the application executable to BabbleSim's bin directory enables
+        running multidevice bsim tests after twister has built them.
+        """
+
+        if self.instance is None:
+            return
+
+        original_exe_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'zephyr.exe')
+        if not os.path.exists(original_exe_path):
+            logger.warning('Cannot copy bsim exe - cannot find original executable.')
+            return
+
+        bsim_out_path: str = os.getenv('BSIM_OUT_PATH', '')
+        if not bsim_out_path:
+            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
+            return
+
+        new_exe_name: str = self.instance.testsuite.harness_config.get('bsim_exe_name', '')
+        if new_exe_name:
+            new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
+        else:
+            new_exe_name = self.instance.name
+            new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_')
+            new_exe_name = f'bs_{new_exe_name}'
+
+        new_exe_path: str = os.path.join(bsim_out_path, 'bin', new_exe_name)
+        logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
+        shutil.copy(original_exe_path, new_exe_path)
+
+
 class HarnessImporter:
 
     @staticmethod
     def get_harness(harness_name):
         thismodule = sys.modules[__name__]
-        if harness_name:
-            harness_class = getattr(thismodule, harness_name)
-        else:
-            harness_class = getattr(thismodule, 'Test')
-        return harness_class()
+        try:
+            if harness_name:
+                harness_class = getattr(thismodule, harness_name)
+            else:
+                harness_class = getattr(thismodule, 'Test')
+            return harness_class()
+        except AttributeError as e:
+            logger.debug(f"harness {harness_name} not implemented: {e}")
+            return None

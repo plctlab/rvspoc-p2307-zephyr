@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Junhui Liu
+ */
+
+/ {
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {		/* GP15 <-> 3V3 */
+				gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+				label = "User button";
+		};
+	};
+
+	aliases {
+		sw0 = &button0;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};

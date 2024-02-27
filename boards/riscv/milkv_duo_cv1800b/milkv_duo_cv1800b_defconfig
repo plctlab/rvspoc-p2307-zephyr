@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_SOC_SERIES_SOPHGO_CV1800B=y
+CONFIG_SOC_SOPHGO_CV1800B=y
+CONFIG_BOARD_MILKV_DUO_CV1800B=y
+
+# Clint Fix
+CONFIG_RISCV_RDTIME_FROM_CSR=y
+CONFIG_SET_MTIMECMP_32BIT=y
+
+# Zephyr Kernel Configuration
+CONFIG_XIP=n
+
+# Serial Drivers
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable I2C
+CONFIG_I2C=y
